@@ -1,0 +1,23 @@
+{
+  "name": "weather_dashboard",
+  "version": "1.0.0",
+  "description": "Welcome to my **Weather Dashboard** — a modern, minimal, and super-cool web app that lets you check the weather for any city on Earth, instantly! Built with love, glassmorphism, and a sprinkle of JavaScript magic.",
+  "main": "dashboard.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/yetforged/weather-dashboard.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/yetforged/weather-dashboard/issues"
+  },
+  "homepage": "https://github.com/yetforged/weather-dashboard#readme",
+  "dependencies": {
+    "node-fetch": "^3.3.2"
+  }
+}

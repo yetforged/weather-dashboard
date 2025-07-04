@@ -1,7 +1,7 @@
 // Weather Dashboard JS - Cool, Minimal, Modern
 
 // ====== CONFIG ======
-const API_KEY = "6730bc5adb6ff3171a98134e5b3016ce"; // <-- Replace with your API key
+// const API_KEY = "6730bc5adb6ff3171a98134e5b3016ce"; // <-- Remove API key from frontend
 
 // ====== DOM ======
 const html = document.documentElement; // Get the root <html> element of the page
@@ -126,7 +126,7 @@ function renderHistory() {
 }
 renderHistory(); // Show the history when the page loads
 
-// ====== WEATHER API ======
+// ====== WEATHER API (via Netlify Function) ======
 async function searchWeather(cityArg) {
   // Main function to search for weather for a city
   const city = typeof cityArg === "string" ? cityArg : citySearch.value.trim(); // Use argument or input value
@@ -134,12 +134,8 @@ async function searchWeather(cityArg) {
   searchBtn.classList.add("animate-spin"); // Show loading animation on search button
   if (searchLoader) searchLoader.classList.remove("hidden"); // Show loader spinner
   try {
-    // Fetch weather data from OpenWeatherMap API
-    const res = await fetch(
-      `https://api.openweathermap.org/data/2.5/weather?q=${encodeURIComponent(
-        city
-      )}&appid=${API_KEY}&units=metric`
-    );
+    // Fetch from Netlify Function
+    const res = await fetch(`/.netlify/functions/weather?city=${encodeURIComponent(city)}`);
     if (!res.ok) {
       // If the response is not OK, handle errors
       let msg = "City not found!";
@@ -148,7 +144,7 @@ async function searchWeather(cityArg) {
         msg = "API quota exceeded. Please try again later.";
       throw new Error(msg); // Throw error to be caught below
     }
-    const d = await res.json(); // Parse the JSON response
+    const { weather: d, aqi: aqiData } = await res.json();
     // Update the UI with weather data
     document.getElementById("location").textContent =
       d.name + (d.sys.country ? ", " + d.sys.country : ""); // Show city and country
@@ -174,30 +170,14 @@ async function searchWeather(cityArg) {
     ).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }); // Show sunset time
     document.getElementById("visibility").textContent =
       (d.visibility / 1000).toFixed(1) + " km"; // Show visibility in km
-    // Fetch Air Quality Index (AQI)
-    const lat = d.coord.lat,
-      lon = d.coord.lon; // Get latitude and longitude
-    let aqi = "-"; // Default AQI value
-    try {
-      const aqiRes = await fetch(
-        `https://api.openweathermap.org/data/2.5/air_pollution?lat=${lat}&lon=${lon}&appid=${API_KEY}`
-      );
-      if (aqiRes.ok) {
-        const aqiData = await aqiRes.json();
-        if (
-          aqiData &&
-          aqiData.list &&
-          aqiData.list[0] &&
-          aqiData.list[0].main &&
-          aqiData.list[0].main.aqi
-        ) {
-          const aqiVal = aqiData.list[0].main.aqi; // Get AQI value
-          const aqiLevels = ["Good", "Fair", "Moderate", "Poor", "Very Poor"]; // AQI levels
-          aqi = `${aqiVal} (${aqiLevels[aqiVal - 1]})`; // Format AQI string
-        }
-      }
-    } catch { } // Ignore AQI errors
-    document.getElementById("aqi").textContent = aqi; // Show AQI
+    // AQI
+    let aqi = "-";
+    if (aqiData && aqiData.list && aqiData.list[0] && aqiData.list[0].main && aqiData.list[0].main.aqi) {
+      const aqiVal = aqiData.list[0].main.aqi;
+      const aqiLevels = ["Good", "Fair", "Moderate", "Poor", "Very Poor"];
+      aqi = `${aqiVal} (${aqiLevels[aqiVal - 1]})`;
+    }
+    document.getElementById("aqi").textContent = aqi;
     // Show weather icon
     const icon = d.weather[0].icon; // Get icon code
     document.getElementById(
@@ -240,7 +220,7 @@ document.querySelectorAll(".card-hover").forEach((card) => {
   });
 });
 
-// ====== GLOBAL CITIES WEATHER ======
+// ====== GLOBAL CITIES WEATHER (via Netlify Function) ======
 const majorCities = [
   { name: "Mumbai", country: "IN" },
   { name: "Delhi", country: "IN" },
@@ -257,13 +237,10 @@ const majorCities = [
 async function fetchCityWeather(city, country) {
   // Fetch weather for a city and country
   try {
-    const res = await fetch(
-      `https://api.openweathermap.org/data/2.5/weather?q=${encodeURIComponent(
-        city
-      )},${country}&appid=${API_KEY}&units=metric`
-    );
+    const res = await fetch(`/.netlify/functions/weather?city=${encodeURIComponent(city)}${country ? `&country=${encodeURIComponent(country)}` : ''}`);
     if (!res.ok) throw new Error("Not found"); // If not found, throw error
-    return await res.json(); // Return the weather data
+    const { weather: d } = await res.json();
+    return d;
   } catch {
     return null; // On error, return null
   }
