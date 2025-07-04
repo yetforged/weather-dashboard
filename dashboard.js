@@ -1,7 +1,4 @@
-// Weather Dashboard JS - Cool, Minimal, Modern
 
-// ====== CONFIG ======
-// // <-- Remove API key from frontend
 
 // ====== DOM ======
 const html = document.documentElement; // Get the root <html> element of the page
