@@ -1,0 +1,783 @@
+
+
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Live Weather Dashboard</title>
+    <!-- Tailwind CSS for styling -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+      // Tailwind CSS custom configuration for animations and colors
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            animation: {
+              "fade-in": "fadeIn 0.5s ease-in-out",
+              "slide-up": "slideUp 0.6s ease-out",
+              glow: "glow 2s ease-in-out infinite alternate",
+              float: "float 3s ease-in-out infinit b e",
+              "pulse-slow": "pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite",
+            },
+            keyframes: {
+              fadeIn: {
+                "0%": { opacity: "0" },
+                "100%": { opacity: "1" },
+              },
+              slideUp: {
+                "0%": { transform: "translateY(20px)", opacity: "0" },
+                "100%": { transform: "translateY(0)", opacity: "1" },
+              },
+              glow: {
+                "0%": { boxShadow: "0 0 5px rgba(59, 130, 246, 0.5)" },
+                "100%": { boxShadow: "0 0 20px rgba(59, 130, 246, 0.8)" },
+              },
+              float: {
+                "0%, 100%": { transform: "translateY(0px)" },
+                "50%": { transform: "translateY(-10px)" },
+              },
+            },
+            backdropBlur: {
+              xs: "2px",
+            },
+          },
+        },
+      };
+    </script>
+    <style>
+      /* Glassmorphism effect for cards and backgrounds */
+      .glass {
+        background: rgba(255, 255, 255, 0.7);
+        backdrop-filter: blur(14px);
+        border: 1.5px solid rgba(180, 180, 255, 0.18);
+        box-shadow: 0 4px 24px 0 rgba(80, 80, 180, 0.07);
+      }
+      .dark .glass {
+        background: rgba(0, 0, 0, 0.2);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        box-shadow: 0 4px 24px 0 rgba(80, 80, 180, 0.12);
+      }
+      /* Card hover effect for interactive feel */
+      .card-hover {
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.6, 1);
+      }
+      .card-hover:hover {
+        transform: translateY(-6px) scale(1.03);
+        box-shadow: 0 24px 48px rgba(59, 130, 246, 0.13),
+          0 2px 8px rgba(80, 80, 180, 0.08);
+      }
+      .dark .card-hover:hover {
+        box-shadow: 0 24px 48px rgba(147, 197, 253, 0.18),
+          0 2px 8px rgba(80, 80, 180, 0.12);
+      }
+      /* Gradient button style */
+      .btn-gradient {
+        background: linear-gradient(90deg, #6366f1 0%, #60a5fa 100%);
+        color: #fff;
+        box-shadow: 0 2px 8px rgba(80, 80, 180, 0.1);
+        transition: transform 0.2s, box-shadow 0.2s;
+      }
+      .btn-gradient:hover {
+        transform: scale(1.06);
+        box-shadow: 0 6px 20px rgba(80, 80, 180, 0.18);
+      }
+      /* Input box style for better contrast */
+      .input-contrast {
+        background: rgba(255, 255, 255, 0.85);
+        color: #222;
+        border: 1.5px solid #c7d2fe;
+        box-shadow: 0 1px 4px rgba(80, 80, 180, 0.06);
+      }
+      .input-contrast:focus {
+        border-color: #6366f1;
+        box-shadow: 0 2px 8px rgba(99, 102, 241, 0.13);
+      }
+    </style>
+  </head>
+  <body
+    class="bg-gradient-to-br from-blue-100 via-indigo-50 to-purple-100 dark:from-gray-900 dark:via-blue-900 dark:to-indigo-900 min-h-screen transition-colors duration-500"
+  >
+    <!-- Dark Mode Toggle Button  -->
+    <div class="fixed top-4 right-4 z-50">
+      <button
+        id="darkModeToggle"
+        class="glass rounded-full p-3 text-gray-700 dark:text-gray-300 hover:scale-110 transition-all duration-300 shadow-lg"
+      >
+        <!-- Sun and Moon icons for dark/light mode -->
+        <svg
+          id="sunIcon"
+          class="w-6 h-6 hidden dark:block"
+          fill="none"
+          stroke="currentColor"
+          viewBox="0 0 24 24"
+        >
+          <circle cx="12" cy="12" r="5"></circle>
+          <line x1="12" y1="1" x2="12" y2="3"></line>
+          <line x1="12" y1="21" x2="12" y2="23"></line>
+          <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+          <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+          <line x1="1" y1="12" x2="3" y2="12"></line>
+          <line x1="21" y1="12" x2="23" y2="12"></line>
+          <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+          <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+        </svg>
+        <svg
+          id="moonIcon"
+          class="w-6 h-6 block dark:hidden"
+          fill="none"
+          stroke="currentColor"
+          viewBox="0 0 24 24"
+        >
+          <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
+        </svg>
+      </button>
+    </div>
+
+    <!-- Top Navigation Bar with Title -->
+    <header
+      class="bg-gradient-to-r from-blue-500 to-indigo-600 dark:from-blue-600 dark:to-indigo-700 shadow-2xl rounded-b-3xl py-6 px-4 animate-fade-in"
+    >
+      <div class="max-w-6xl mx-auto">
+        <h1
+          class="text-3xl md:text-4xl lg:text-5xl font-bold text-white text-center tracking-wide drop-shadow-lg"
+        >
+          Live Weather Dashboard
+        </h1>
+        <p class="text-white/90 text-center mt-2 text-sm md:text-base">
+          Your city's weather, reimagined
+        </p>
+      </div>
+    </header>
+
+    <!-- Header Section: Search Bar and Date/Time -->
+    <section class="max-w-6xl mx-auto px-4 mt-8 animate-slide-up">
+      <div class="flex flex-col lg:flex-row justify-between items-center gap-6">
+        <!-- Search Bar for entering city name -->
+        <div class="relative w-full max-w-md">
+          <input
+            type="text"
+            id="citySearch"
+            placeholder="Enter city..."
+            class="w-full py-4 pl-6 pr-16 rounded-full glass border-2 border-blue-200 dark:border-blue-700 focus:ring-4 focus:ring-blue-300 dark:focus:ring-blue-600 focus:border-blue-400 dark:focus:border-blue-500 outline-none transition-all duration-300 text-gray-700 dark:text-gray-200 placeholder-gray-500 dark:placeholder-gray-400 shadow-lg input-contrast"
+          />
+          <button
+            id="searchBtn"
+            class="absolute right-2 top-1/2 -translate-y-1/2 bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 text-white rounded-full p-3 transition-all duration-300 shadow-lg hover:scale-110 btn-gradient"
+          >
+            <!-- Magnifying glass icon for search -->
+            <svg
+              class="w-5 h-5"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              viewBox="0 0 24 24"
+            >
+              <circle cx="11" cy="11" r="8" />
+              <line x1="21" y1="21" x2="16.65" y2="16.65" />
+            </svg>
+          </button>
+          <!-- 📍 Button to open map modal for city selection -->
+          <a
+            id="openMapModal"
+            href="#"
+            class="absolute right-16 top-1/2 -translate-y-1/2 flex items-center gap-1 px-4 py-2 rounded-full bg-gradient-to-r from-blue-400 to-indigo-500 hover:from-blue-500 hover:to-indigo-600 text-white font-semibold shadow-lg btn-gradient transition-all duration-300 hover:scale-105 focus:outline-none focus:ring-2 focus:ring-blue-400 dark:focus:ring-blue-600"
+            style="z-index: 2"
+            onclick="openMapModal()"
+          >
+            <span class="text-lg">📍</span>
+            <span class="hidden sm:inline">Find on Map</span>
+          </a>
+          <!-- Loader spinner shown while searching -->
+          <div
+            id="searchLoader"
+            class="absolute right-14 top-1/2 -translate-y-1/2 hidden flex items-center gap-2"
+          >
+            <svg
+              class="animate-spin w-6 h-6 text-blue-500 dark:text-blue-300"
+              fill="none"
+              viewBox="0 0 24 24"
+            >
+              <circle
+                class="opacity-25"
+                cx="12"
+                cy="12"
+                r="10"
+                stroke="currentColor"
+                stroke-width="4"
+              ></circle>
+              <path
+                class="opacity-75"
+                fill="currentColor"
+                d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"
+              ></path>
+            </svg>
+            <span
+              class="text-blue-600 dark:text-blue-300 text-xs font-semibold animate-pulse select-none"
+              >Please wait...</span
+            >
+          </div>
+        </div>
+
+        <!-- Date and Time Panel -->
+        <div class="text-center lg:text-right">
+          <div
+            id="currentDay"
+            class="text-2xl font-bold text-gray-800 dark:text-gray-200"
+          >
+            Sunday
+          </div>
+          <div
+            id="currentDate"
+            class="text-sm text-gray-600 dark:text-gray-400"
+          >
+            June 29, 2025
+          </div>
+          <div
+            id="currentTime"
+            class="text-lg font-semibold text-blue-600 dark:text-blue-400"
+          >
+            12:00 PM
+          </div>
+        </div>
+      </div>
+      <!-- Search History OF recent cities -->
+      <div
+        id="history"
+        class="w-full max-w-md mx-auto mt-3 flex flex-wrap gap-2"
+      ></div>
+    </section>
+
+    <!-- Map Modal for picking city from map -->
+    <div
+      id="mapModal"
+      class="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-70 hidden"
+    >
+      <div
+        class="relative w-full max-w-2xl mx-auto bg-white dark:bg-gray-900 rounded-2xl shadow-2xl flex flex-col items-center p-0 sm:p-6"
+        style="height: 70vh"
+      >
+        <!-- Close Button for map modal -->
+        <button
+          id="closeMapModal"
+          class="absolute top-4 right-4 text-3xl text-gray-700 dark:text-gray-200 hover:text-red-500 focus:outline-none z-10"
+          onclick="closeMapModal()"
+        >
+          &times;
+        </button>
+        <!-- Map Container (Leaflet.js will render map here) -->
+        <div
+          id="map"
+          class="w-full h-full rounded-xl overflow-hidden"
+          style="height: calc(70vh - 2rem)"
+        ></div>
+      </div>
+    </div>
+
+    <!-- Main Weather Card (shows current weather for selected city) -->
+    <main class="max-w-6xl mx-auto px-4 mt-8 animate-slide-up">
+      <div
+        class="glass rounded-3xl shadow-2xl p-8 lg:p-12 border border-white/20 dark:border-gray-700/30"
+      >
+        <!-- Weather Icon & Temperature -->
+        <div class="flex flex-col items-center mb-8">
+          <div class="relative mb-4">
+            <!-- Animated Weather Icon (changes with weather) -->
+            <div id="weatherIcon" class="w-32 h-32 animate-float">
+              <!-- Default Sunny Icon -->
+              <svg
+                class="w-full h-full text-yellow-400 dark:text-yellow-300"
+                fill="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <circle cx="12" cy="12" r="5" />
+                <g>
+                  <line
+                    x1="12"
+                    y1="1"
+                    x2="12"
+                    y2="3"
+                    stroke="currentColor"
+                    stroke-width="2"
+                    stroke-linecap="round"
+                  />
+                  <line
+                    x1="12"
+                    y1="21"
+                    x2="12"
+                    y2="23"
+                    stroke="currentColor"
+                    stroke-width="2"
+                    stroke-linecap="round"
+                  />
+                  <line
+                    x1="4.22"
+                    y1="4.22"
+                    x2="5.64"
+                    y2="5.64"
+                    stroke="currentColor"
+                    stroke-width="2"
+                    stroke-linecap="round"
+                  />
+                  <line
+                    x1="18.36"
+                    y1="18.36"
+                    x2="19.78"
+                    y2="19.78"
+                    stroke="currentColor"
+                    stroke-width="2"
+                    stroke-linecap="round"
+                  />
+                  <line
+                    x1="1"
+                    y1="12"
+                    x2="3"
+                    y2="12"
+                    stroke="currentColor"
+                    stroke-width="2"
+                    stroke-linecap="round"
+                  />
+                  <line
+                    x1="21"
+                    y1="12"
+                    x2="23"
+                    y2="12"
+                    stroke="currentColor"
+                    stroke-width="2"
+                    stroke-linecap="round"
+                  />
+                  <line
+                    x1="4.22"
+                    y1="19.78"
+                    x2="5.64"
+                    y2="18.36"
+                    stroke="currentColor"
+                    stroke-width="2"
+                    stroke-linecap="round"
+                  />
+                  <line
+                    x1="18.36"
+                    y1="5.64"
+                    x2="19.78"
+                    y2="4.22"
+                    stroke="currentColor"
+                    stroke-width="2"
+                    stroke-linecap="round"
+                  />
+                </g>
+              </svg>
+            </div>
+            <!-- Glow Effect behind icon -->
+            <div
+              class="absolute inset-0 bg-yellow-400/20 dark:bg-yellow-300/20 rounded-full blur-xl animate-pulse-slow"
+            ></div>
+          </div>
+
+          <div class="text-center">
+            <div
+              id="currentTemp"
+              class="text-6xl lg:text-7xl font-bold text-gray-800 dark:text-gray-200 mb-2"
+            >
+              25°C
+            </div>
+            <div
+              id="weatherDesc"
+              class="text-xl text-gray-600 dark:text-gray-400 font-medium"
+            >
+              Partly Cloudy
+            </div>
+            <div
+              id="location"
+              class="text-lg text-blue-600 dark:text-blue-400 font-semibold mt-2"
+            >
+              Kolhapur
+            </div>
+          </div>
+        </div>
+
+        <!-- Min/Max Temperature Cards -->
+        <div class="grid grid-cols-2 gap-4 mb-8">
+          <div class="glass rounded-2xl p-6 text-center card-hover">
+            <div
+              class="text-blue-600 dark:text-blue-400 font-semibold text-lg mb-2"
+            >
+              Min Temperature
+            </div>
+            <div
+              id="minTemp"
+              class="text-3xl font-bold text-gray-800 dark:text-gray-200"
+            >
+              20°C
+            </div>
+          </div>
+          <div class="glass rounded-2xl p-6 text-center card-hover">
+            <div
+              class="text-red-600 dark:text-red-400 font-semibold text-lg mb-2"
+            >
+              Max Temperature
+            </div>
+            <div
+              id="maxTemp"
+              class="text-3xl font-bold text-gray-800 dark:text-gray-200"
+            >
+              30°C
+            </div>
+          </div>
+        </div>
+
+        <!-- Weather Details Grid (wind, humidity, etc.) -->
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+          <!-- Wind Speed -->
+          <div class="glass rounded-2xl p-6 text-center card-hover">
+            <div
+              class="w-12 h-12 mx-auto mb-3 bg-blue-100 dark:bg-blue-900/30 rounded-full flex items-center justify-center"
+            >
+              <svg
+                class="w-6 h-6 text-blue-600 dark:text-blue-400"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  d="M9.59 4.59A2 2 0 1 1 11 8H2m10.59 11.41A2 2 0 1 0 14 16H2m15.73-8.27A2 2 0 1 1 19 12H2"
+                ></path>
+              </svg>
+            </div>
+            <div
+              class="text-blue-600 dark:text-blue-400 font-semibold text-sm mb-1"
+            >
+              Wind Speed
+            </div>
+            <div
+              id="windSpeed"
+              class="text-xl font-bold text-gray-800 dark:text-gray-200"
+            >
+              10 km/h
+            </div>
+          </div>
+
+          <!-- Humidity -->
+          <div class="glass rounded-2xl p-6 text-center card-hover">
+            <div
+              class="w-12 h-12 mx-auto mb-3 bg-blue-100 dark:bg-blue-900/30 rounded-full flex items-center justify-center"
+            >
+              <svg
+                class="w-6 h-6 text-blue-600 dark:text-blue-400"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path d="M12 3v18m0-18l-4 4m4-4l4 4"></path>
+              </svg>
+            </div>
+            <div
+              class="text-blue-600 dark:text-blue-400 font-semibold text-sm mb-1"
+            >
+              Humidity
+            </div>
+            <div
+              id="humidity"
+              class="text-xl font-bold text-gray-800 dark:text-gray-200"
+            >
+              60%
+            </div>
+          </div>
+
+          <!-- Feels Like -->
+          <div class="glass rounded-2xl p-6 text-center card-hover">
+            <div
+              class="w-12 h-12 mx-auto mb-3 bg-orange-100 dark:bg-orange-900/30 rounded-full flex items-center justify-center"
+            >
+              <svg
+                class="w-6 h-6 text-orange-600 dark:text-orange-400"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  d="M12 9v3m0 0v3m0-3h3m-3 0H9m12 0a9 9 0 11-18 0 9 9 0 0118 0z"
+                ></path>
+              </svg>
+            </div>
+            <div
+              class="text-orange-600 dark:text-orange-400 font-semibold text-sm mb-1"
+            >
+              Feels Like
+            </div>
+            <div
+              id="feelsLike"
+              class="text-xl font-bold text-gray-800 dark:text-gray-200"
+            >
+              27°C
+            </div>
+          </div>
+
+          <!-- Pressure -->
+          <div class="glass rounded-2xl p-6 text-center card-hover">
+            <div
+              class="w-12 h-12 mx-auto mb-3 bg-purple-100 dark:bg-purple-900/30 rounded-full flex items-center justify-center"
+            >
+              <svg
+                class="w-6 h-6 text-purple-600 dark:text-purple-400"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <circle cx="12" cy="12" r="10"></circle>
+                <path d="M12 6v6l4 2"></path>
+              </svg>
+            </div>
+            <div
+              class="text-purple-600 dark:text-purple-400 font-semibold text-sm mb-1"
+            >
+              Pressure
+            </div>
+            <div
+              id="pressure"
+              class="text-xl font-bold text-gray-800 dark:text-gray-200"
+            >
+              1013 hPa
+            </div>
+          </div>
+
+          <!-- Sunrise -->
+          <div class="glass rounded-2xl p-6 text-center card-hover">
+            <div
+              class="w-12 h-12 mx-auto mb-3 bg-yellow-100 dark:bg-yellow-900/30 rounded-full flex items-center justify-center"
+            >
+              <svg
+                class="w-6 h-6 text-yellow-600 dark:text-yellow-400"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <circle cx="12" cy="12" r="5"></circle>
+                <line x1="12" y1="1" x2="12" y2="3"></line>
+                <line x1="12" y1="21" x2="12" y2="23"></line>
+                <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+                <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+                <line x1="1" y1="12" x2="3" y2="12"></line>
+                <line x1="21" y1="12" x2="23" y2="12"></line>
+                <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+                <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+              </svg>
+            </div>
+            <div
+              class="text-yellow-600 dark:text-yellow-400 font-semibold text-sm mb-1"
+            >
+              Sunrise
+            </div>
+            <div
+              id="sunrise"
+              class="text-xl font-bold text-gray-800 dark:text-gray-200"
+            >
+              6:00 AM
+            </div>
+          </div>
+
+          <!-- Sunset -->
+          <div class="glass rounded-2xl p-6 text-center card-hover">
+            <div
+              class="w-12 h-12 mx-auto mb-3 bg-orange-100 dark:bg-orange-900/30 rounded-full flex items-center justify-center"
+            >
+              <svg
+                class="w-6 h-6 text-orange-600 dark:text-orange-400"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"></path>
+              </svg>
+            </div>
+            <div
+              class="text-orange-600 dark:text-orange-400 font-semibold text-sm mb-1"
+            >
+              Sunset
+            </div>
+            <div
+              id="sunset"
+              class="text-xl font-bold text-gray-800 dark:text-gray-200"
+            >
+              6:30 PM
+            </div>
+          </div>
+
+          <!-- Visibility -->
+          <div class="glass rounded-2xl p-6 text-center card-hover">
+            <div
+              class="w-12 h-12 mx-auto mb-3 bg-green-100 dark:bg-green-900/30 rounded-full flex items-center justify-center"
+            >
+              <svg
+                class="w-6 h-6 text-green-600 dark:text-green-400"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                <circle cx="12" cy="12" r="3"></circle>
+              </svg>
+            </div>
+            <div
+              class="text-green-600 dark:text-green-400 font-semibold text-sm mb-1"
+            >
+              Visibility
+            </div>
+            <div
+              id="visibility"
+              class="text-xl font-bold text-gray-800 dark:text-gray-200"
+            >
+              10 km
+            </div>
+          </div>
+
+          <!-- AQI  -->
+          <div class="glass rounded-2xl p-6 text-center card-hover">
+            <div
+              class="w-12 h-12 mx-auto mb-3 bg-yellow-100 dark:bg-yellow-900/30 rounded-full flex items-center justify-center"
+            >
+              <svg
+                class="w-6 h-6 text-yellow-600 dark:text-yellow-400"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <circle cx="12" cy="12" r="10"></circle>
+                <path
+                  d="M8 12h8M12 8v8"
+                  stroke="currentColor"
+                  stroke-width="2"
+                  stroke-linecap="round"
+                />
+              </svg>
+            </div>
+            <div
+              class="text-yellow-600 dark:text-yellow-400 font-semibold text-sm mb-1"
+            >
+              Air Quality Index
+            </div>
+            <div
+              id="aqi"
+              class="text-xl font-bold text-gray-800 dark:text-gray-200"
+            >
+              -
+            </div>
+          </div>
+        </div>
+      </div>
+    </main>
+
+    <!--  weather for major cities -->
+    <section
+      id="globalCitiesWeather"
+      class="max-w-6xl mx-auto px-4 mt-8 animate-fade-in"
+    >
+      <h2
+        class="text-2xl md:text-3xl font-bold text-center text-blue-700 dark:text-blue-300 mb-6 tracking-wide drop-shadow-lg"
+      >
+        Weather in Major Cities
+      </h2>
+      <div
+        id="citiesWeatherGrid"
+        class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-6"
+      ></div>
+    </section>
+
+    <!-- Footer with credits -->
+    <footer class="mt-12 py-6 text-center animate-fade-in">
+      <div
+        class="glass rounded-2xl mx-4 py-4 border-t border-white/20 dark:border-gray-700/30"
+      >
+        <p class="text-gray-600 dark:text-gray-400 text-sm">
+          Weather data by
+          <a
+            href="https://openweathermap.org/"
+            target="_blank"
+            class="text-blue-600 dark:text-blue-400 hover:underline font-medium transition-colors duration-200"
+          >
+            OpenWeatherMap
+          </a>
+          | Chirayu © 2025
+        </p>
+      </div>
+    </footer>
+
+    <!-- Main JavaScript file for dashboard logic -->
+    <script src="dashboard.js"></script>
+    <script>
+      // The following script handles the map modal and city selection from the map
+      let mapInitialized = false;
+      let leafletMap = null;
+      function initMap() {
+        // Center map on India by default
+        const india = [20.5937, 78.9629];
+        leafletMap = L.map("map").setView(india, 5);
+        L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+          attribution:
+            '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+        }).addTo(leafletMap);
+        // Listen for clicks to get city name (reverse geocode)
+        leafletMap.on("click", async function (e) {
+          const lat = e.latlng.lat;
+          const lng = e.latlng.lng;
+          // Call Nominatim reverse geocoding to get city name
+          const url = `https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lng}&format=json&zoom=10&addressdetails=1`;
+          try {
+            const response = await fetch(url, {
+              headers: { "Accept-Language": "en" },
+            });
+            const data = await response.json();
+            let city =
+              data.address.city ||
+              data.address.town ||
+              data.address.village ||
+              data.address.county ||
+              data.address.state;
+            if (city) {
+              // Optionally, show marker and popup
+              L.marker([lat, lng])
+                .addTo(leafletMap)
+                .bindPopup(`City: ${city}`)
+                .openPopup();
+              // Trigger weather search for this city
+              searchCityWeather(city);
+            } else {
+              alert("Could not determine city name for this location.");
+            }
+          } catch (err) {
+            alert("Error fetching city name.");
+          }
+        });
+      }
+      // This function triggers the weather search for the selected city
+      function searchCityWeather(city) {
+        // Set the input value and trigger the search button click
+        document.getElementById("citySearch").value = city;
+        document.getElementById("searchBtn").click();
+        closeMapModal();
+      }
+      // Open the map modal
+      function openMapModal() {
+        document.getElementById("mapModal").classList.remove("hidden");
+        if (!mapInitialized) {
+          initMap();
+          mapInitialized = true;
+        }
+      }
+      // Close the map modal
+      function closeMapModal() {
+        document.getElementById("mapModal").classList.add("hidden");
+      }
+      // Also close modal if user clicks outside the modal content
+      document.addEventListener("DOMContentLoaded", function () {
+        const modal = document.getElementById("mapModal");
+        modal.addEventListener("click", function (e) {
+          if (e.target === modal) closeMapModal();
+        });
+      });
+    </script>
+    <!-- Leaflet CSS & JS for interactive map -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+  </body>
+</html>
